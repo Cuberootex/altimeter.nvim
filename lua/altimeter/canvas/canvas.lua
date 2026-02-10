@@ -24,6 +24,13 @@ function M_canvas:is_position_valid(row, col)
     return row >= 1 and row <= self.properties.height and col >= 1 and col <= self.properties.width
 end
 
+function M_canvas:get_character_at(row, col)
+    if not self:is_position_valid(row, col) then
+        error("Position out of bounds: (" .. row .. ", " .. col .. ")")
+    end
+    return self.contents[row][col]
+end
+
 function M_canvas:write_char(char, row, col)
     if row < 1 or row > self.properties.height or col < 1 or col > self.properties.width then
         error("Position out of bounds: (" .. row .. ", " .. col .. ")")
