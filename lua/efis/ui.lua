@@ -9,6 +9,10 @@ local M_ui = {}
 function M_ui:new()
     local instance = {
         active = false,
+        autohide = {
+            currently_autohidden = false,
+            window_visibility_updated = false
+        },
         buffer = -1,
         window = -1,
         augrp = -1,
@@ -32,13 +36,13 @@ function M_ui:calculate_floating_window_width(number_of_lines)
     return digits + 4
 end
 
-function M_ui:get_floating_window_dimensions()
+function M_ui:get_floating_window_options()
     -- TODO: read these default values from config later
     local lines = vim.api.nvim_buf_line_count(0)
     local default_width = self:calculate_floating_window_width(lines)
     local lines_above_and_below_indicator = 8
     local default_anchor = "NE"
-    local default_padding_x = 1
+    local default_padding_x = 0
     local vim_window_width = vim.o.columns
     local vim_window_height = vim.o.lines - vim.o.cmdheight
 
@@ -58,6 +62,8 @@ function M_ui:get_floating_window_dimensions()
         height = height,
         row = row,
         col = column,
+        anchor = default_anchor,
+
     }
     return new_window_options
 end
@@ -69,6 +75,21 @@ function M_ui:redraw()
     self:close_window()
     self:open_window()
     self:draw()
+end
+
+
+local function window_should_autohide(cursor_row, cursor_col, window_options)
+    -- hide window if cursor approaches the area where the window is, to prevent it from being in the way when editing near the edges of the screen
+    local padding_x_perc = 0.2 -- TODO extract to config
+    local padding_x = math.ceil(vim.o.columns * padding_x_perc)
+    if window_options.anchor == "NE" then
+        return cursor_col >= window_options.col - window_options.width - padding_x
+    elseif window_options.anchor == "NW" then
+        return cursor_col <= window_options.col + window_options.width + padding_x
+    else 
+        vim.print("wtf?", window_options)
+        return false
+    end
 end
 
 function M_ui:create_autocmds()
@@ -83,6 +104,27 @@ function M_ui:create_autocmds()
     }
     vim.api.nvim_create_autocmd(refresh_events, {
         callback = function()
+            -- TODO config: autohide can be based on absolute cursor position OR 
+            -- on "character column" position 
+            -- which will hide the window if the user positions himself
+            -- at the end of a wrapped line, even if the window is not actually 
+            -- in the way
+            -- local cursor_pos = vim.fn.getcursorcharpos()
+            -- local cursor_row = cursor_pos[2]
+            -- local cursor_col = cursor_pos[3]
+            local lnum = vim.fn.line('.')
+            local col = vim.fn.col('.')
+            local pos = vim.fn.screenpos(0, lnum, col)
+            local cursor_row = pos.row
+            local cursor_col = pos.col
+            self.autohide.should_autohide = window_should_autohide(cursor_row, cursor_col, self.window_options)
+            if self.autohide.should_autohide and not self.autohide.window_visibility_updated then
+                self.autohide.window_visibility_updated = true
+                self:close_window()
+            elseif not self.autohide.should_autohide and self.autohide.window_visibility_updated then
+                self.autohide.window_visibility_updated = false
+                self:open_window()
+            end
             self:draw()
         end,
         group = self.augrp,
@@ -94,7 +136,7 @@ function M_ui:create_autocmds()
         "WinClosed"
     }, {
         callback = function(event)
-            if self.active and not exiting and (event.event == "TabEnter" or tonumber(event.match) == tonumber(self.window)) then
+            if self.active and not self.autohide.should_autohide and not exiting and (event.event == "TabEnter" or tonumber(event.match) == tonumber(self.window)) then
                 exiting = true
                 vim.schedule(function()
                     self:redraw()
@@ -132,7 +174,7 @@ function M_ui:open_window()
         self.buffer = api.nvim_create_buf(false, true)
     end
     if self.window == -1 or not api.nvim_win_is_valid(self.window) then
-        local window_options = self:get_floating_window_dimensions()
+        local window_options = self:get_floating_window_options()
         self.window_options = window_options
         self.window = api.nvim_open_win(self.buffer, false, {
             relative = "editor",
@@ -178,7 +220,7 @@ function M_ui:get_lines_blank_canvas(current_line, total_lines)
 end
 
 function M_ui:draw()
-    if not self.active then
+    if not self.active or self.autohide.should_autohide then
         return
     end
 
