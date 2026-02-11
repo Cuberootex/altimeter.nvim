@@ -1,5 +1,6 @@
 local api = vim.api
-local ui = require("efis.ui")
+local ui_altimeter = require("efis.ui")
+local ui_heading = require("efis.ui_heading")
 
 local M_core = {}
 
@@ -12,7 +13,8 @@ function M_core:setup_autocmds()
     api.nvim_create_autocmd("CursorMoved", {
         group = augrp,
         callback = function()
-            ui:draw()
+            ui_altimeter:draw()
+            ui_heading:draw()
         end
     })
 end

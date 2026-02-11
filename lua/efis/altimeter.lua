@@ -261,6 +261,8 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         -- row (canvas_line) (on the canvas's coordinate system)
         -- it's a bit inconsistent sometimes I write line then sometimes
         -- I write row I need to refactor this...
+        -- woah current_line comes from the outer scope
+        -- that's terrible
         return current_line - math.ceil(canvas_height / 2) + canvas_line
     end
 

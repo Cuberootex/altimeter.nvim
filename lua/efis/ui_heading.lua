@@ -1,12 +1,14 @@
+-- a really terrible copy paste for now.
+
 local api = vim.api
-local altimeter = require("efis.altimeter")
+local heading = require("efis.heading")
 local Canvas = require("efis.canvas.canvas")
 local Character = require("efis.canvas.character")
 local Line = require("efis.canvas.line")
 
-local M_ui = {}
+local M_ui_heading = {}
 
-function M_ui:new()
+function M_ui_heading:new()
     local instance = {
         active = false,
         autohide = {
@@ -21,8 +23,8 @@ function M_ui:new()
             col = -1,
             width = -1,
             height = -1,
-            anchor = "NE",
-            border = { "·", "─", "·", "", "·", "─", "·", "" },
+            anchor = "SE",
+            border = { "", "", "", "", "", "", "", "" },
             zindex = 1,
             winblend = 100,
         }
@@ -32,35 +34,27 @@ function M_ui:new()
 end
 
 -- Evaluates how wide the floating window should be based on the number of lines in the file, and the number of digits in that number
-function M_ui:calculate_floating_window_width(number_of_lines)
+function M_ui_heading:calculate_floating_window_width(number_of_lines)
     local digits = math.max(2, math.floor(math.log10(number_of_lines)) + 1)
     return digits + 4
 end
 
-function M_ui:get_floating_window_options()
+function M_ui_heading:get_floating_window_options()
     -- TODO: read these default values from config later
     local lines = vim.api.nvim_buf_line_count(0)
+
     local default_width = self:calculate_floating_window_width(lines)
     local lines_above_and_below_indicator = 8
-    -- we add 2 extra lines above and belowe on top of 
-    -- the 'lines_above_and_below_indicator' count
-    -- to draw a border and to display extra text$
-    -- hence the +4 on computed_height
-    local default_anchor = "NE"
+    local default_anchor = "NW"
     local default_padding_x = 0
     local vim_window_width = vim.o.columns
     local vim_window_height = vim.o.lines - vim.o.cmdheight
 
-    local width = math.min(default_width, vim_window_width)
-    local computed_height = 4 + lines_above_and_below_indicator * 2 + 1 -- +1 for the line the indicator is on
-    local height = math.min(computed_height, vim_window_height - 5)
+    local width = 43 -- width needs to be ODD
+    local height = 3
 
-    local row = math.floor(vim_window_height - height * 1.5)
-
-    local column = vim_window_width - default_padding_x -- cause anchor at NE by default
-    if default_anchor == "NW" then
-        column = default_padding_x
-    end
+    local row = math.floor(vim_window_height - height - 1)
+    local column = math.floor((vim_window_width - width))
 
     local new_window_options = {
         width = width,
@@ -73,7 +67,7 @@ function M_ui:get_floating_window_options()
     return new_window_options
 end
 
-function M_ui:redraw()
+function M_ui_heading:redraw()
     if not self.active then
         return
     end
@@ -84,21 +78,22 @@ end
 
 
 local function window_should_autohide(cursor_row, cursor_col, window_options)
-    -- hide window if cursor approaches the area where the window is, to prevent it from being in the way when editing near the edges of the screen
-    local padding_x_perc = 0.2 -- TODO extract to config
-    local padding_x = math.ceil(vim.o.columns * padding_x_perc)
-    if window_options.anchor == "NE" then
-        return cursor_col >= window_options.col - window_options.width - padding_x
-    elseif window_options.anchor == "NW" then
-        return cursor_col <= window_options.col + window_options.width + padding_x
-    else 
-        vim.print("wtf?", window_options)
-        return false
-    end
+    return false
+    -- -- hide window if cursor approaches the area where the window is, to prevent it from being in the way when editing near the edges of the screen
+    -- local padding_x_perc = 0.2 -- TODO extract to config
+    -- local padding_x = math.ceil(vim.o.columns * padding_x_perc)
+    -- if window_options.anchor == "NE" then
+    --     return cursor_col >= window_options.col - window_options.width - padding_x
+    -- elseif window_options.anchor == "NW" then
+    --     return cursor_col <= window_options.col + window_options.width + padding_x
+    -- else 
+    --     vim.print("wtf?", window_options)
+    --     return false
+    -- end
 end
 
-function M_ui:create_autocmds()
-    self.augrp = api.nvim_create_augroup("altimeter_ui", { clear = true })
+function M_ui_heading:create_autocmds()
+    self.augrp = api.nvim_create_augroup("efis_heading_ui", { clear = true })
     -- TODO listen for when the buffer gains more lines and update the floating window dimensions accordingly,
     local refresh_events = {
         "CursorMoved",
@@ -175,7 +170,7 @@ function M_ui:create_autocmds()
     })
 end
 
-function M_ui:open_window()
+function M_ui_heading:open_window()
     if self.buffer == -1 or not api.nvim_buf_is_valid(self.buffer) then
         self.buffer = api.nvim_create_buf(false, true)
     end
@@ -195,10 +190,11 @@ function M_ui:open_window()
             noautocmd = true,
             winblend = self.window_options.winblend,
         })
+        -- print("heading window opened with id", self.window)
     end
 end
 
-function M_ui:close_window()
+function M_ui_heading:close_window()
     if self.buffer ~= -1 and api.nvim_buf_is_valid(self.buffer) then
         api.nvim_buf_delete(self.buffer, { force = true })
         self.buffer = -1
@@ -209,7 +205,7 @@ function M_ui:close_window()
     end
 end
 
-function M_ui:toggle()
+function M_ui_heading:toggle()
     if self.active then
         self:close_window()
     else
@@ -218,7 +214,7 @@ function M_ui:toggle()
     self.active = not self.active
 end
 
-function M_ui:get_lines_blank_canvas(current_line, total_lines)
+function M_ui_heading:get_lines_blank_canvas(current_line, total_lines)
     local lines = {}
     for i = 1, self.window_options.height do
         table.insert(lines, string.rep(" ", self.window_options.width))
@@ -226,24 +222,27 @@ function M_ui:get_lines_blank_canvas(current_line, total_lines)
     return lines
 end
 
-function M_ui:draw()
+function M_ui_heading:draw()
     if not self.active or self.autohide.should_autohide then
         return
     end
 
-    local line = api.nvim_win_get_cursor(0)[1]
-    local total_lines = api.nvim_buf_line_count(0)
+    local cur_char = api.nvim_win_get_cursor(0)[2] + 1
+    -- TODO: this is really bad, we should be able to get the total number of characters in the file without having to read the entire line every time we redraw the window
+    local total_chars = #api.nvim_get_current_line()
 
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
-    canvas = altimeter:draw_top_and_bottom_borders(canvas)
-    canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
-    canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
+    canvas = heading:draw_analog_tape(canvas, cur_char, total_chars)
+    canvas = heading:draw_analog_scale(canvas, cur_char, total_chars)
+    canvas = heading:draw_heading_char_indicator(canvas, cur_char, total_chars)
+    -- canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
+    -- canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
     local current_line_graphic = canvas:convert_to_lines()
 
 
-    local ns = api.nvim_create_namespace("altimeter")
+    local ns = api.nvim_create_namespace("efis_heading_ns")
     api.nvim_buf_clear_namespace(self.buffer, ns, 0, -1)
     api.nvim_buf_set_lines(self.buffer, 0, -1, false, current_line_graphic)
 end
 
-return M_ui
+return M_ui_heading
