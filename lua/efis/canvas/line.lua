@@ -1,5 +1,5 @@
 local M_line = {}
-local Character = require("altimeter.canvas.character")
+local Character = require("efis.canvas.character")
 
 function M_line:new(length)
     local instance = {

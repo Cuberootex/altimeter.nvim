@@ -1,5 +1,5 @@
 local M_canvas = {}
-local Character = require("altimeter.canvas.character")
+local Character = require("efis.canvas.character")
 
 function M_canvas:new(width, height)
     local instance = {

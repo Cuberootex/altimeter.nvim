@@ -1,10 +1,10 @@
-local cfg = require("altimeter.config")
+local cfg = require("efis.config")
 
 local M = {}
 
 function M.setup(opts)
     cfg:setup(opts)
-    local altimeter_ui = require("altimeter.ui")
+    local altimeter_ui = require("efis.ui")
     local ui_instance = altimeter_ui:new()
 
     ui_instance:create_autocmds()
@@ -20,7 +20,7 @@ function M.setup(opts)
     })
 
 
-    print("hi from setup")
+    print("hi from efis setup")
 end
 
 return M
