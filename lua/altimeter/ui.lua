@@ -17,6 +17,8 @@ function M_ui:new()
             width = -1,
             height = -1,
             anchor = "NE",
+            border = { "·", "─", "·", " ", "·", "─", "·", " " },
+            zindex = 1,
         }
     }
     setmetatable(instance, { __index = self })
@@ -26,7 +28,7 @@ end
 -- Evaluates how wide the floating window should be based on the number of lines in the file, and the number of digits in that number
 function M_ui:calculate_floating_window_width(number_of_lines)
     local digits = math.max(2, math.floor(math.log10(number_of_lines)) + 1)
-    return digits + 5
+    return digits + 4
 end
 
 function M_ui:get_floating_window_dimensions()
@@ -41,9 +43,9 @@ function M_ui:get_floating_window_dimensions()
 
     local width = math.min(default_width, vim_window_width)
     local computed_height = lines_above_and_below_indicator * 2 + 1 -- +1 for the line the indicator is on
-    local height = math.min(computed_height, vim_window_height)
+    local height = math.min(computed_height, vim_window_height - 5)
 
-    local row = vim_window_height - height * 2
+    local row = math.floor(vim_window_height - height * 1.5)
 
     local column = vim_window_width - default_padding_x -- cause anchor at NE by default
     if default_anchor == "NW" then
@@ -89,7 +91,12 @@ function M_ui:create_autocmds()
     })
     vim.api.nvim_create_autocmd("VimResized", {
         callback = function()
-            print("resizing window")
+            --TODO cheap solution for now...
+            self:toggle()
+            self:toggle()
+            if self.active then
+                self:draw()
+            end
         end,
         group = self.augrp,
     })
@@ -109,7 +116,7 @@ function M_ui:open_window()
             row = self.window_options.row,
             col = self.window_options.col,
             anchor = self.window_options.anchor,
-            border = "single",
+            border = { "·", "┄", "·", " ", "·", "┄", "·", " " },
             style = "minimal",
             focusable = false,
             noautocmd = true,
@@ -143,6 +150,166 @@ function M_ui:get_lines_blank_canvas(current_line, total_lines)
         table.insert(lines, string.rep(" ", self.window_options.width))
     end
     return lines
+end
+
+local function draw_altimeter_analog_tape(canvas, current_line, total_lines)
+    -- for every line of the canvas, determine which line number it corresponds to on the tape
+    -- (we know the middle of the canvas corresponds to the current line number
+    -- first column of the canvas will be used to draw a vertical line
+    -- then we mark the positions % 5 and % 10
+    local canvas_width = canvas.properties.width
+    local canvas_height = canvas.properties.height
+
+    local symbols = {
+        mark_top_vertical = Character:new("Ⓣ"),
+        mark_top_line = Character:new("═"),
+        vertical_tape_line = Character:new("⁝"),
+        mark_5_vertical = Character:new("├"),
+        mark_5_line = Character:new(nil),
+        mark_10_vertical = Character:new("├"),
+        mark_10_line = Character:new("─"),
+        mark_bottom_vertical = Character:new("🅑"),
+        mark_bottom_line = Character:new("═"),
+    }
+
+    local file_progression_symbols = {
+        mark_10_perc = Character:new("①"),
+        mark_20_perc = Character:new("②"),
+        mark_30_perc = Character:new("③"),
+        mark_40_perc = Character:new("④"),
+        mark_50_perc = Character:new("⑤"),
+        mark_60_perc = Character:new("⑥"),
+        mark_70_perc = Character:new("⑦"),
+        mark_80_perc = Character:new("⑧"),
+        mark_90_perc = Character:new("⑨"),
+    }
+
+    local function write_tape_vertical(line_number_represented, canvas_line)
+        local symbol_to_write = symbols.vertical_tape_line
+        if line_number_represented == 1 then
+            symbol_to_write = symbols.mark_top_vertical
+        elseif line_number_represented == total_lines then
+            symbol_to_write = symbols.mark_bottom_vertical
+        elseif line_number_represented % 10 == 0 then
+            symbol_to_write = symbols.mark_10_vertical
+        elseif line_number_represented % 5 == 0 then
+            symbol_to_write = symbols.mark_5_vertical
+        end
+        canvas:write_char(symbol_to_write, canvas_line, 1)
+    end
+
+    local function write_tape_vertical_percentage(line_number_represented, canvas_line)
+        if total_lines < canvas_height then
+            return
+        end
+        if line_number_represented == 1 or line_number_represented == total_lines then
+            return
+        end
+        local percentage_prev_line = math.floor(((line_number_represented - 1) / total_lines) * 100)
+        local percentage_current_line = math.floor((line_number_represented / total_lines) * 100)
+        local percentage_next_line = math.floor(((line_number_represented + 1) / total_lines) * 100)
+        if (percentage_prev_line / 10) % 10 == (percentage_current_line / 10) % 10 then 
+            return
+        end
+        if percentage_current_line % 10 == 0 then
+            local symbol_to_write = file_progression_symbols["mark_" .. percentage_current_line .. "_perc"]
+            canvas:write_char(symbol_to_write, canvas_line, 1)
+        end
+    end
+
+    local function write_tape_lines(line_number_represented, canvas_line)
+        local symbol_to_write = nil
+        if line_number_represented == 1 then
+            symbol_to_write = symbols.mark_top_line
+        elseif line_number_represented == total_lines then
+            symbol_to_write = symbols.mark_bottom_line
+        elseif line_number_represented % 10 == 0 then
+            symbol_to_write = symbols.mark_10_line
+        elseif line_number_represented % 5 == 0 then
+            symbol_to_write = symbols.mark_5_line
+        end
+        local length_line_number_str = math.floor(math.log10(line_number_represented)) + 1
+        if not symbol_to_write then
+            return
+        end
+        local length_marker_line = canvas_width - length_line_number_str - 3
+        if length_marker_line < 1 then
+            return
+        end
+        local line_to_write = Line:new(length_marker_line)
+        for i = 1, length_marker_line do
+            line_to_write:set_character_at(i, symbol_to_write)
+        end
+        canvas:write_line(line_to_write, canvas_line, 2)
+    end
+
+    local function write_line_number(line_number_represented, canvas_line)
+        local line_number_str = tostring(line_number_represented)
+        local line_number_char_object = Line.create_from_str(line_number_str)
+        canvas:write_line(
+            line_number_char_object,
+            canvas_line,
+            canvas_width - line_number_char_object.length
+        )
+    end
+
+    -- should be an option to display percentage either before or after the line number,
+    -- or to not display it at all
+    local function write_file_progress_percentage(line_number_represented, canvas_line)
+        if total_lines < canvas_height then
+            return
+        end
+        if line_number_represented <= 1 or line_number_represented == total_lines then
+            return
+        end
+        -- ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉﹪
+        local disable_percentage_symbol = true
+        local subscript_digits = {
+            ["0"] = Character:new("₀"),
+            ["1"] = Character:new("₁"),
+            ["2"] = Character:new("₂"),
+            ["3"] = Character:new("₃"),
+            ["4"] = Character:new("₄"),
+            ["5"] = Character:new("₅"),
+            ["6"] = Character:new("₆"),
+            ["7"] = Character:new("₇"),
+            ["8"] = Character:new("₈"),
+            ["9"] = Character:new("₉"),
+            ["%"] = Character:new("%"),
+        }
+        local percentage = math.floor((line_number_represented / total_lines) * 100)
+        local percentage_str = tostring(percentage) .. "%"
+        if disable_percentage_symbol then
+            percentage_str = percentage_str:sub(1, #percentage_str - 1)
+        end
+        local percentage_line = Line:new(#percentage_str)
+        for i = 1, #percentage_str do
+            local char = subscript_digits[percentage_str:sub(i, i)]
+            percentage_line:set_character_at(i, char)
+        end
+        canvas:write_line(
+            percentage_line,
+            canvas_line,
+            2
+        )
+    end
+
+    for canvas_line = 1, canvas_height do
+        local line_number_represented = current_line - math.ceil(canvas_height / 2) + canvas_line
+        if line_number_represented < 1 or line_number_represented > total_lines then
+            goto continue
+        end
+        write_tape_vertical(line_number_represented, canvas_line)
+        write_tape_vertical_percentage(line_number_represented, canvas_line)
+        write_tape_lines(line_number_represented, canvas_line)
+        if line_number_represented % 5 == 0 or line_number_represented == 1 or line_number_represented == total_lines then
+            write_file_progress_percentage(line_number_represented - 1, canvas_line - 1)
+            write_line_number(line_number_represented, canvas_line)
+        end
+        ::continue::
+    end
+
+    return canvas
 end
 
 local function draw_altimeter_line_indicator(canvas, current_line, total_lines)
@@ -201,6 +368,7 @@ local function draw_altimeter_line_indicator(canvas, current_line, total_lines)
     middle_line_left_graphic:set_character_at(2, borders.vertical)
     local line_object_line_count = Line.create_from_str(tostring(current_line))
 
+
     local spaces_needed_to_right_align_line_count =
         analog_window_width - line_object_line_count.length
     local middle_graphic_length =
@@ -210,10 +378,20 @@ local function draw_altimeter_line_indicator(canvas, current_line, total_lines)
         + 1 -- to account for the vertical border on the right side
     local start_col_for_middle_graphic = canvas_width - middle_graphic_length + 1
 
+    local opaque_right_align_space = Line:new(spaces_needed_to_right_align_line_count)
+    for i = 1, spaces_needed_to_right_align_line_count do
+        opaque_right_align_space:set_character_at(i, Character:new(" "))
+    end
+
     canvas:write_line(
         middle_line_left_graphic,
         start_row_offset + 2,
         start_col_for_middle_graphic
+    )
+    canvas:write_line(
+        opaque_right_align_space,
+        start_row_offset + 2,
+        start_col_for_middle_graphic + 2
     )
     canvas:write_line(
         line_object_line_count,
@@ -363,6 +541,7 @@ function M_ui:draw()
     local total_lines = api.nvim_buf_line_count(0)
 
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
+    canvas = draw_altimeter_analog_tape(canvas, line, total_lines)
     canvas = draw_altimeter_line_indicator(canvas, line, total_lines)
     local current_line_graphic = canvas:convert_to_lines()
 
