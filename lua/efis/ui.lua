@@ -41,13 +41,17 @@ function M_ui:get_floating_window_options()
     local lines = vim.api.nvim_buf_line_count(0)
     local default_width = self:calculate_floating_window_width(lines)
     local lines_above_and_below_indicator = 8
+    -- we add 2 extra lines above and belowe on top of 
+    -- the 'lines_above_and_below_indicator' count
+    -- to draw a border and to display extra text$
+    -- hence the +4 on computed_height
     local default_anchor = "NE"
     local default_padding_x = 0
     local vim_window_width = vim.o.columns
     local vim_window_height = vim.o.lines - vim.o.cmdheight
 
     local width = math.min(default_width, vim_window_width)
-    local computed_height = lines_above_and_below_indicator * 2 + 1 -- +1 for the line the indicator is on
+    local computed_height = 4 + lines_above_and_below_indicator * 2 + 1 -- +1 for the line the indicator is on
     local height = math.min(computed_height, vim_window_height - 5)
 
     local row = math.floor(vim_window_height - height * 1.5)
@@ -101,6 +105,7 @@ function M_ui:create_autocmds()
         "TextChanged",
         "TextChangedI",
         "WinScrolled",
+        "ModeChanged",
     }
     vim.api.nvim_create_autocmd(refresh_events, {
         callback = function()
@@ -228,6 +233,7 @@ function M_ui:draw()
     local total_lines = api.nvim_buf_line_count(0)
 
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
+    canvas = altimeter:draw_top_and_bottom_borders(canvas)
     canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
     canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
     local current_line_graphic = canvas:convert_to_lines()

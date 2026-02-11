@@ -38,4 +38,16 @@ function M_line.create_from_str(str)
     return line
 end
 
+function M_line:overlay(at_column, other_line)
+    for i = 1, other_line.length do
+        local other_char = other_line:get_character_at(i)
+        local new_index = at_column + i - 1
+        if new_index > self.length then
+            break
+        end
+        self:set_character_at(at_column + i - 1, other_char)
+    end
+
+end
+
 return M_line
