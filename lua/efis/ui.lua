@@ -112,14 +112,14 @@ function M_ui:create_autocmds()
             -- which will hide the window if the user positions himself
             -- at the end of a wrapped line, even if the window is not actually 
             -- in the way
-            -- local cursor_pos = vim.fn.getcursorcharpos()
-            -- local cursor_row = cursor_pos[2]
-            -- local cursor_col = cursor_pos[3]
-            local lnum = vim.fn.line('.')
-            local col = vim.fn.col('.')
-            local pos = vim.fn.screenpos(0, lnum, col)
-            local cursor_row = pos.row
-            local cursor_col = pos.col
+            local cursor_pos = vim.fn.getcursorcharpos()
+            local cursor_row = cursor_pos[2]
+            local cursor_col = cursor_pos[3]
+            -- local lnum = vim.fn.line('.')
+            -- local col = vim.fn.col('.')
+            -- local pos = vim.fn.screenpos(0, lnum, col)
+            -- local cursor_row = pos.row
+            -- local cursor_col = pos.col
             self.autohide.should_autohide = window_should_autohide(cursor_row, cursor_col, self.window_options)
             if self.autohide.should_autohide and not self.autohide.window_visibility_updated then
                 self.autohide.window_visibility_updated = true
