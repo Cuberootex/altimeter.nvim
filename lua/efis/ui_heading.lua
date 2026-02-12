@@ -53,7 +53,7 @@ function M_ui_heading:get_floating_window_options()
     local width = 43 -- width needs to be ODD
     local height = 3
 
-    local row = math.floor(vim_window_height - height - 1)
+    local row = math.floor(vim_window_height - height)
     local column = math.floor((vim_window_width - width))
 
     local new_window_options = {

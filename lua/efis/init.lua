@@ -21,9 +21,6 @@ function M.setup(opts)
         desc = "Toggle altimeter UI",
         bang = true,
     })
-
-
-    print("hi from efis setup")
 end
 
 return M
