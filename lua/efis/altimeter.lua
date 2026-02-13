@@ -13,14 +13,18 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
     local canvas_width = canvas.properties.width
     local canvas_height = canvas.properties.height
 
+    local tape_start_col = 2
+
     local symbols = {
         mark_top_vertical = Character:new("Ⓣ"),
         mark_top_line = Character:new("═"),
         vertical_tape_line = Character:new("│"),
         mark_5_vertical = Character:new("├"),
-        mark_5_line = Character:new(nil),
-        mark_10_vertical = Character:new("├"),
-        mark_10_line = Character:new("─"),
+        mark_5_line = Character:new("╴"),
+        -- mark_10_vertical = Character:new("├"),
+        mark_10_vertical = Character:new("┝"),
+        -- mark_10_line = Character:new("─"),
+        mark_10_line = Character:new("╸"),
         mark_bottom_vertical = Character:new("🅑"),
         mark_bottom_line = Character:new("═"),
         mark_visual_sel_vertical_start = Character:new("╈"),
@@ -87,7 +91,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         elseif is_end then
             symbol = symbols.mark_visual_sel_vertical_end
         end
-        canvas:write_char(symbol, canvas_line, 1)
+        canvas:write_char(symbol, canvas_line, tape_start_col)
     end
 
     local function write_tape_vertical(line_number_represented, canvas_line)
@@ -101,27 +105,9 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         elseif line_number_represented % 5 == 0 then
             symbol_to_write = symbols.mark_5_vertical
         end
-        canvas:write_char(symbol_to_write, canvas_line, 1)
+        canvas:write_char(symbol_to_write, canvas_line, tape_start_col)
     end
 
-    -- local function write_tape_vertical_percentage(line_number_represented, canvas_line)
-    --     if total_lines < canvas_height then
-    --         return
-    --     end
-    --     if line_number_represented == 1 or line_number_represented == total_lines then
-    --         return
-    --     end
-    --     local percentage_prev_line = math.floor(((line_number_represented - 1) / total_lines) * 100)
-    --     local percentage_current_line = math.floor((line_number_represented / total_lines) * 100)
-    --     local percentage_next_line = math.floor(((line_number_represented + 1) / total_lines) * 100)
-    --     if (percentage_prev_line / 10) % 10 == (percentage_current_line / 10) % 10 then
-    --         return
-    --     end
-    --     if percentage_current_line % 10 == 0 then
-    --         local symbol_to_write = file_progression_symbols["mark_" .. percentage_current_line .. "_perc"]
-    --         canvas:write_char(symbol_to_write, canvas_line, 1)
-    --     end
-    -- end
 
     local function write_tape_lines(line_number_represented, canvas_line)
         local symbol_to_write = nil
@@ -138,7 +124,12 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         if not symbol_to_write then
             return
         end
-        local length_marker_line = canvas_width - length_line_number_str - 3
+        -- TODO config for length_marker_line
+        -- if they set it to canvas_width - length_line_number_str - 3 
+        -- then the mark_5_line and mark_10_line characters need to 
+        -- be changed to their horizontal line counterparts 
+        local length_marker_line = 1
+        -- local length_marker_line = canvas_width - length_line_number_str - 3
         if length_marker_line < 1 then
             return
         end
@@ -146,7 +137,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         for i = 1, length_marker_line do
             line_to_write:set_character_at(i, symbol_to_write)
         end
-        canvas:write_line(line_to_write, canvas_line, 2)
+        canvas:write_line(line_to_write, canvas_line, tape_start_col + 1)
     end
 
     local function write_line_number(line_number_represented, canvas_line)
@@ -159,13 +150,22 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         )
     end
 
-    local function get_visual_sel_line_graphic(visual_sel_line)
-        local line = Line:new(canvas_width - 2)
-        line:set_character_at(1, symbols.icon_visual_sel_line)
+    -- is_out_of_range
+    --  0: no
+    --  1: above
+    --  2: below
+    local function get_graphic_icon_w_lnum(icon, visual_sel_line, is_out_of_range)
+        local line = Line:new(canvas_width - tape_start_col)
+        line:set_character_at(1, icon)
+        if is_out_of_range == 1 then
+            line:set_character_at(line.length, Character:new("△"))
+        elseif is_out_of_range == 2 then
+            line:set_character_at(line.length, Character:new("▽"))
+        end
         local line_number_str = tostring(visual_sel_line)
         local line_number_char_object = Line.create_from_str(line_number_str)
         line:overlay(
-            canvas_width - 1 - line_number_char_object.length,
+            canvas_width - tape_start_col - line_number_char_object.length,
             line_number_char_object
         )
         return line
@@ -184,14 +184,53 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
             return nil
         end
         local start_line, end_line = unpack(visual_sel_range)
-        if start_line < line_num_represented_top_row_tape then
-            local line_graphic = get_visual_sel_line_graphic(start_line)
-            canvas:write_line(line_graphic, tape_top_line_on_canvas, 2)
+        if start_line <= line_num_represented_top_row_tape then
+            local oob = start_line < line_num_represented_top_row_tape and 1 or 0
+            local line_graphic = get_graphic_icon_w_lnum(symbols.icon_visual_sel_line, start_line, oob)
+            canvas:write_line(line_graphic, tape_top_line_on_canvas, tape_start_col + 1)
         end
-        if end_line > line_num_represented_bottom_row_tape then
-            local line_graphic = get_visual_sel_line_graphic(end_line)
-            canvas:write_line(line_graphic, tape_bottom_line_on_canvas, 2)
+        if end_line >= line_num_represented_bottom_row_tape then
+            local oob = end_line > line_num_represented_bottom_row_tape and 2 or 0
+            local line_graphic = get_graphic_icon_w_lnum(symbols.icon_visual_sel_line, end_line, oob)
+            canvas:write_line(line_graphic, tape_bottom_line_on_canvas, tape_start_col + 1)
         end
+    end
+
+    local function sticky_write_specific_line_number(
+        line_num_represented_top_row_tape,
+        line_num_represented_bottom_row_tape,
+        tape_top_line_on_canvas,
+        tape_bottom_line_on_canvas,
+        line_number_to_write,
+        icon
+    )
+        if line_number_to_write < 1 or line_number_to_write > total_lines then
+            return
+        end
+        if line_number_to_write < line_num_represented_top_row_tape then
+            local line_graphic = get_graphic_icon_w_lnum(icon, line_number_to_write, 1)
+            canvas:write_line(line_graphic, tape_top_line_on_canvas, tape_start_col + 1)
+        elseif line_number_to_write > line_num_represented_bottom_row_tape then
+            local line_graphic = get_graphic_icon_w_lnum(icon, line_number_to_write, 2)
+            canvas:write_line(line_graphic, tape_bottom_line_on_canvas, tape_start_col + 1)
+        else
+        end
+    end
+
+    local function write_specific_line_number(
+        line_number_represented,
+        canvas_line,
+        specific_line_number_to_write,
+        icon
+    )
+        if specific_line_number_to_write < 1 or specific_line_number_to_write > total_lines then
+            return
+        end
+        if line_number_represented ~= specific_line_number_to_write then
+            return
+        end
+        local line_graphic = get_graphic_icon_w_lnum(icon, line_number_represented, 0)
+        canvas:write_line(line_graphic, canvas_line, tape_start_col + 1)
     end
 
     local function write_visual_sel_line_number(line_number_represented, canvas_line)
@@ -201,11 +240,11 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         then
             return
         end
-        local line = get_visual_sel_line_graphic(line_number_represented)
+        local line = get_graphic_icon_w_lnum(symbols.icon_visual_sel_line, line_number_represented)
         canvas:write_line(
             line,
             canvas_line,
-            2
+            tape_start_col + 1
         )
     end
 
@@ -251,7 +290,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         canvas:write_line(
             percentage_line,
             canvas_line,
-            2
+            tape_start_col + 1
         )
     end
 
@@ -268,6 +307,13 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
 
     local tape_top_line_on_canvas = 3
     local tape_bottom_line_on_canvas = canvas_height - 2
+    local line_num_represented_top_row_tape =
+        get_represented_line_number_for_canvas_line(tape_top_line_on_canvas)
+    local line_num_represented_bottom_row_tape =
+        get_represented_line_number_for_canvas_line(tape_bottom_line_on_canvas)
+
+    -- attainable by doing 'gi' in normal mode
+    local last_insert_mode_line = vim.api.nvim_buf_get_mark(0, '^')[1]
 
     for canvas_line = tape_top_line_on_canvas, tape_bottom_line_on_canvas do
         local line_number_represented = get_represented_line_number_for_canvas_line(canvas_line)
@@ -286,15 +332,22 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         if line_number_represented % 5 == 0 or line_number_represented == 1 or line_number_represented == total_lines then
             write_line_number(line_number_represented, canvas_line)
         end
+        write_specific_line_number(line_number_represented, canvas_line, last_insert_mode_line, Character:new("I"))
         write_visual_sel_line_number(line_number_represented, canvas_line)
         write_tape_visual(line_number_represented, canvas_line)
         ::continue::
     end
 
-    local line_num_represented_top_row_tape =
-        get_represented_line_number_for_canvas_line(tape_top_line_on_canvas)
-    local line_num_represented_bottom_row_tape =
-        get_represented_line_number_for_canvas_line(tape_bottom_line_on_canvas)
+    sticky_write_specific_line_number(
+        line_num_represented_top_row_tape,
+        line_num_represented_bottom_row_tape,
+        tape_top_line_on_canvas,
+        tape_bottom_line_on_canvas,
+        last_insert_mode_line,
+        Character:new("I")
+    )
+
+    -- has priority over the last insert line indicator
     sticky_write_visual_sel_line_number(
         line_num_represented_top_row_tape,
         line_num_represented_bottom_row_tape,
@@ -302,10 +355,11 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         tape_bottom_line_on_canvas
     )
 
+
     return canvas
 end
 
-function M_altimeter:draw_top_and_bottom_borders(canvas)
+function M_altimeter:draw_top_and_bottom_borders(canvas, tape_start_col)
     local borders = {
         top_left = Character:new("┯"),
         top_right = Character:new("┄"),
@@ -324,8 +378,8 @@ function M_altimeter:draw_top_and_bottom_borders(canvas)
     top_line:set_character_at(canvas_width, borders.top_right)
     bottom_line:set_character_at(1, borders.bottom_left)
     bottom_line:set_character_at(canvas_width, borders.bottom_right)
-    canvas:write_line(top_line, 2, 1)
-    canvas:write_line(bottom_line, canvas.properties.height - 1, 1)
+    canvas:write_line(top_line, 2, tape_start_col)
+    canvas:write_line(bottom_line, canvas.properties.height - 1, tape_start_col)
     return canvas
 end
 
@@ -350,6 +404,7 @@ function M_altimeter:draw_altimeter_line_indicator(canvas, current_line, total_l
     }
     local symbols = {
         arrow_pointing_left = Character:new("◁"),
+        icon_visual_sel_line = Character:new("󰒅"),
     }
 
     local start_row_offset = math.floor((canvas_height - 5) / 2) + 1
@@ -381,7 +436,12 @@ function M_altimeter:draw_altimeter_line_indicator(canvas, current_line, total_l
     )
 
     local middle_line_left_graphic = Line:new(2)
-    middle_line_left_graphic:set_character_at(1, symbols.arrow_pointing_left)
+    local mode = vim.api.nvim_get_mode().mode
+    if mode == "v" or mode == "V" or mode == "" then
+        middle_line_left_graphic:set_character_at(1, symbols.icon_visual_sel_line)
+    else
+        middle_line_left_graphic:set_character_at(1, symbols.arrow_pointing_left)
+    end
     middle_line_left_graphic:set_character_at(2, borders.vertical)
     local line_object_line_count = Line.create_from_str(tostring(current_line))
 

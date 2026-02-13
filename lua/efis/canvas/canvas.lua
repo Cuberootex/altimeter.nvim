@@ -2,7 +2,7 @@ local M_canvas = {}
 local Character = require("efis.canvas.character")
 
 function M_canvas:new(width, height)
-    local instance = {
+   local instance = {
         contents = {},
         properties = {
             width = width,

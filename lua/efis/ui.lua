@@ -34,7 +34,7 @@ end
 -- Evaluates how wide the floating window should be based on the number of lines in the file, and the number of digits in that number
 function M_ui:calculate_floating_window_width(number_of_lines)
     local digits = math.max(2, math.floor(math.log10(number_of_lines)) + 1)
-    return digits + 4
+    return digits + 5
 end
 
 function M_ui:get_floating_window_options()
@@ -231,8 +231,30 @@ function M_ui:draw()
     local line = api.nvim_win_get_cursor(0)[1]
     local total_lines = api.nvim_buf_line_count(0)
 
+    -- local has_tele, tele_state = pcall(require, "telescope.actions.state")
+    -- local current_buf = api.nvim_get_current_buf()
+    -- local ft = api.nvim_get_option_value("filetype", { buf = current_buf })
+    -- if has_tele and ft == "TelescopePrompt" then
+    --     local picker = tele_state.get_current_picker(current_buf)
+    --     if picker and picker.results_win and api.nvim_win_is_valid(picker.results_win) then
+    --         local results_buf = api.nvim_win_get_buf(picker.results_win)
+    --         if api.nvim_buf_is_valid(results_buf) then
+    --             line = api.nvim_win_get_cursor(picker.results_win)[1]
+    --             total_lines = api.nvim_buf_line_count(results_buf)
+    --         else
+    --             -- Buffer is dead/wiped, fallback
+    --             line = 1
+    --             total_lines = 1
+    --         end
+    --     else
+    --         line = 1 
+    --         total_lines = 1
+    --     end
+    -- end
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
-    canvas = altimeter:draw_top_and_bottom_borders(canvas)
+    -- so inconsistent, tape_start_col is passed here
+    canvas = altimeter:draw_top_and_bottom_borders(canvas, 2)
+    -- but for this function it's baked in...
     canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
     canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
     local current_line_graphic = canvas:convert_to_lines()

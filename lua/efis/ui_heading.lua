@@ -50,7 +50,7 @@ function M_ui_heading:get_floating_window_options()
     local vim_window_width = vim.o.columns
     local vim_window_height = vim.o.lines - vim.o.cmdheight
 
-    local width = 43 -- width needs to be ODD
+    local width = 33 -- width needs to be ODD
     local height = 3
 
     local row = math.floor(vim_window_height - height)
@@ -222,6 +222,8 @@ function M_ui_heading:get_lines_blank_canvas(current_line, total_lines)
     return lines
 end
 
+
+
 function M_ui_heading:draw()
     if not self.active or self.autohide.should_autohide then
         return
@@ -231,12 +233,17 @@ function M_ui_heading:draw()
     -- TODO: this is really bad, we should be able to get the total number of characters in the file without having to read the entire line every time we redraw the window
     local total_chars = #api.nvim_get_current_line()
 
+    local mode = vim.api.nvim_get_mode().mode
+    local mode_letter = "N"
+
+
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
     canvas = heading:draw_analog_tape(canvas, cur_char, total_chars)
     canvas = heading:draw_analog_scale(canvas, cur_char, total_chars)
     canvas = heading:draw_heading_char_indicator(canvas, cur_char, total_chars)
     -- canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
     -- canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
+    canvas = heading:draw_mode_indicator(canvas, mode_letter)
     local current_line_graphic = canvas:convert_to_lines()
 
 

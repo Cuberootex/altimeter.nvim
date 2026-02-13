@@ -47,7 +47,7 @@ function M_heading:draw_heading_char_indicator(canvas, current_char, total_chars
         math.floor(canvas_width / 2) + 1
     )
     
-    M_heading:temporary_draw_total_char(canvas, total_chars, canvas_width - 2)
+    M_heading:temporary_draw_total_char(canvas, current_char, total_chars, canvas_width - 2)
 
     return canvas
 end
@@ -58,28 +58,53 @@ end
 
 
 local function write_tape_horizontal_line(char_num_represented, canvas_col, total_chars, canvas)
+    -- there should be an option in config
+    -- whether to display the analog tape beyond the
+    -- total number of characters in the line or not
     local symbols = {
         horizontal_line = Character:new("─"),
+        -- horizontal_line_not_reached = Character:new("·"),
+        horizontal_line_not_reached = Character:new(" "),
         start_of_tape = Character:new("┠"),
         end_of_tape = Character:new("┨"),
-        start_and_end_of_tape = Character:new("┃"),
+        start_and_end_of_tape = Character:new("┃"), -- you can never see this char because of the diamond symbol
         mark_type_1 = Character:new("┴"),
         mark_type_2 = Character:new("┸"),
+        mark_type_1_past_limit = Character:new("╧"),
+        mark_type_2_past_limit = Character:new("╩"),
+        horizontal_line_past_limit = Character:new("═"),
+        mark_char_limit = Character:new("╬"),
     }
-    if char_num_represented < 1 or char_num_represented > total_chars then
+    -- TODO Config
+    local char_limit = 100
+    local symbol = symbols.horizontal_line
+    if char_num_represented < 1 then
         return
     end
-    local symbol = symbols.horizontal_line
-    if char_num_represented == 1 and char_num_represented == total_chars then
+    -- YandereDev engaged??????????
+    if char_num_represented == char_limit then
+        symbol = symbols.mark_char_limit
+    elseif char_num_represented > total_chars then
+        symbol = symbols.horizontal_line_not_reached
+    elseif char_num_represented == 1 and char_num_represented == total_chars then
         symbol = symbols.start_and_end_of_tape
-    elseif char_num_represented == 1 then
-        symbol = symbols.start_of_tape
-    elseif char_num_represented == total_chars then
-        symbol = symbols.end_of_tape
     elseif char_num_represented % 10 == 0 then
         symbol = symbols.mark_type_2
     elseif char_num_represented % 5 == 0 then
         symbol = symbols.mark_type_1
+    end
+    if char_num_represented > char_limit then
+        symbol = symbols.horizontal_line_past_limit
+        if char_num_represented % 10 == 0 then
+            symbol = symbols.mark_type_2_past_limit
+        elseif char_num_represented % 5 == 0 then
+            symbol = symbols.mark_type_1_past_limit
+        end
+    end
+    if char_num_represented == 1 then
+        symbol = symbols.start_of_tape
+    elseif char_num_represented == total_chars then
+        symbol = symbols.end_of_tape
     end
     canvas:write_char(
         symbol,
@@ -109,10 +134,15 @@ local function write_individual_scale_number(
     canvas_col
 )
     -- TODO: better return statements
-    if represented_char_number <= 1 or represented_char_number >= total_chars then
+    if represented_char_number <= 1 then
         return
     end
-    if represented_char_number % 20 ~= 0 then
+    -- TODO config: can be toggled
+    if represented_char_number > total_chars then
+        return
+    end
+    -- TODO Config
+    if represented_char_number % 10 ~= 0 then
         return
     end
     local digits_character_object_table = {
@@ -176,29 +206,75 @@ function M_heading:draw_analog_tape(canvas, current_char, total_chars)
     return canvas
 end
 
-function M_heading:temporary_draw_total_char(canvas, total_chars, tape_end_col_on_canvas)
+-- watch this become permanent
+function M_heading:temporary_draw_total_char(canvas, current_char, total_chars, tape_end_col_on_canvas)
 
-    local superscripts_character_object_table = {
-        ["0"] = Character:new("⁰"),
-        ["1"] = Character:new("¹"),
-        ["2"] = Character:new("²"),
-        ["3"] = Character:new("³"),
-        ["4"] = Character:new("⁴"),
-        ["5"] = Character:new("⁵"),
-        ["6"] = Character:new("⁶"),
-        ["7"] = Character:new("⁷"),
-        ["8"] = Character:new("⁸"),
-        ["9"] = Character:new("⁹"),
+    -- local superscripts_character_object_table = {
+    --     ["0"] = Character:new("⁰"),
+    --     ["1"] = Character:new("¹"),
+    --     ["2"] = Character:new("²"),
+    --     ["3"] = Character:new("³"),
+    --     ["4"] = Character:new("⁴"),
+    --     ["5"] = Character:new("⁵"),
+    --     ["6"] = Character:new("⁶"),
+    --     ["7"] = Character:new("⁷"),
+    --     ["8"] = Character:new("⁸"),
+    --     ["9"] = Character:new("⁹"),
+    -- }
+
+    local digits_character_object_table = {
+        ["0"] = Character:new("₀"),
+        ["1"] = Character:new("₁"),
+        ["2"] = Character:new("₂"),
+        ["3"] = Character:new("₃"),
+        ["4"] = Character:new("₄"),
+        ["5"] = Character:new("₅"),
+        ["6"] = Character:new("₆"),
+        ["7"] = Character:new("₇"),
+        ["8"] = Character:new("₈"),
+        ["9"] = Character:new("₉"),
     }
 
     -- draw total_chars in the middle, on row 3
-    local line_object = get_char_number_line_graphic(total_chars, superscripts_character_object_table)
+    local line_object = get_char_number_line_graphic(total_chars, digits_character_object_table)
     canvas:write_line(
         line_object,
         3,
         tape_end_col_on_canvas - math.floor(line_object.length / 2)
     )
 
+    local modifier_right_arrowhead = Character:new("›")
+
+    local represented_char_at_end_of_tape = get_represented_char_number_on_tape(canvas.properties.width, current_char, tape_end_col_on_canvas)
+    if represented_char_at_end_of_tape < total_chars then
+        canvas:write_char(
+            modifier_right_arrowhead,
+            3,
+            tape_end_col_on_canvas + 2
+        )
+    end
+
+end
+
+
+function M_heading:draw_mode_indicator(canvas)
+    local mode = vim.api.nvim_get_mode()
+    local mode_letter = string.upper(string.sub(mode.mode, 1, 1))
+    local mode_character_object = Character:new(mode_letter)
+    canvas:write_char(
+        mode_character_object,
+        2,
+        canvas.properties.width
+    )
+    if mode.blocking then
+        local block_character_object = Character:new("B")
+        canvas:write_char(
+            block_character_object,
+            1,
+            canvas.properties.width
+        )
+    end
+    return canvas
 end
 
 
