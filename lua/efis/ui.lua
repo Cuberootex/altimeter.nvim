@@ -259,10 +259,10 @@ function M_ui:draw()
     canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
     local current_line_graphic = canvas:convert_to_lines()
 
-
     local ns = api.nvim_create_namespace("altimeter")
     api.nvim_buf_clear_namespace(self.buffer, ns, 0, -1)
     api.nvim_buf_set_lines(self.buffer, 0, -1, false, current_line_graphic)
+    canvas:call_extmark_hl(self.buffer, ns)
 end
 
 return M_ui

@@ -236,6 +236,8 @@ function M_ui_heading:draw()
     local mode = vim.api.nvim_get_mode().mode
     local mode_letter = "N"
 
+    local is_file_modified = vim.bo.modified
+
 
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
     canvas = heading:draw_analog_tape(canvas, cur_char, total_chars)
@@ -243,10 +245,12 @@ function M_ui_heading:draw()
     canvas = heading:draw_heading_char_indicator(canvas, cur_char, total_chars)
     -- canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
     -- canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)
-    canvas = heading:draw_mode_indicator(canvas, mode_letter)
+    canvas = heading:draw_mode_indicator(canvas)
+
+
+    -- canvas = heading:draw_file_name(canvas, vim.fn.expand("%:t"), is_file_modified)
+
     local current_line_graphic = canvas:convert_to_lines()
-
-
     local ns = api.nvim_create_namespace("efis_heading_ns")
     api.nvim_buf_clear_namespace(self.buffer, ns, 0, -1)
     api.nvim_buf_set_lines(self.buffer, 0, -1, false, current_line_graphic)

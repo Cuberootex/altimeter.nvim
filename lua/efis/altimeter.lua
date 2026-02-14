@@ -125,9 +125,9 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
             return
         end
         -- TODO config for length_marker_line
-        -- if they set it to canvas_width - length_line_number_str - 3 
-        -- then the mark_5_line and mark_10_line characters need to 
-        -- be changed to their horizontal line counterparts 
+        -- if they set it to canvas_width - length_line_number_str - 3
+        -- then the mark_5_line and mark_10_line characters need to
+        -- be changed to their horizontal line counterparts
         local length_marker_line = 1
         -- local length_marker_line = canvas_width - length_line_number_str - 3
         if length_marker_line < 1 then
@@ -277,6 +277,9 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
             ["9"] = Character:new("₉"),
             ["%"] = Character:new("%"),
         }
+        for _, char_obj in pairs(subscript_digits) do
+            char_obj:set_hl_group("AltimeterFileProgressionPerc")
+        end
         local percentage = math.floor((line_number_represented / total_lines) * 100)
         local percentage_str = tostring(percentage) .. "%"
         if disable_percentage_symbol then
@@ -332,7 +335,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         if line_number_represented % 5 == 0 or line_number_represented == 1 or line_number_represented == total_lines then
             write_line_number(line_number_represented, canvas_line)
         end
-        write_specific_line_number(line_number_represented, canvas_line, last_insert_mode_line, Character:new("I"))
+        write_specific_line_number(line_number_represented, canvas_line, last_insert_mode_line, Character:new("^"))
         write_visual_sel_line_number(line_number_represented, canvas_line)
         write_tape_visual(line_number_represented, canvas_line)
         ::continue::
@@ -344,7 +347,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         tape_top_line_on_canvas,
         tape_bottom_line_on_canvas,
         last_insert_mode_line,
-        Character:new("I")
+        Character:new("^")
     )
 
     -- has priority over the last insert line indicator
@@ -367,6 +370,9 @@ function M_altimeter:draw_top_and_bottom_borders(canvas, tape_start_col)
         bottom_right = Character:new("┄"),
         horizontal = Character:new("┄"),
     }
+    for _, char in pairs(borders) do
+        char:set_hl_group("AltimeterTopBottomBorder")
+    end
     local canvas_width = canvas.properties.width
     local top_line = Line:new(canvas_width)
     local bottom_line = Line:new(canvas_width)
@@ -395,16 +401,16 @@ function M_altimeter:draw_altimeter_line_indicator(canvas, current_line, total_l
     local canvas_width = canvas.properties.width
     local canvas_height = canvas.properties.height
     local borders = {
-        top_left = Character:new("┌"),
-        top_right = Character:new("┐"),
-        bottom_left = Character:new("└"),
-        bottom_right = Character:new("┘"),
-        vertical = Character:new("│"),
-        horizontal = Character:new("─"),
+        top_left = Character:new("┌", "AltimeterBorderLineWindow"),
+        top_right = Character:new("┐", "AltimeterBorderLineWindow"),
+        bottom_left = Character:new("└", "AltimeterBorderLineWindow"),
+        bottom_right = Character:new("┘", "AltimeterBorderLineWindow"),
+        vertical = Character:new("│", "AltimeterBorderLineWindow"),
+        horizontal = Character:new("─", "AltimeterBorderLineWindow"),
     }
     local symbols = {
-        arrow_pointing_left = Character:new("◁"),
-        icon_visual_sel_line = Character:new("󰒅"),
+        arrow_pointing_left = Character:new("◁", "AltimeterCurrentLineArrow"),
+        icon_visual_sel_line = Character:new("󰒅", "AltimeterVisualSelection"),
     }
 
     local start_row_offset = math.floor((canvas_height - 5) / 2) + 1
@@ -426,7 +432,7 @@ function M_altimeter:draw_altimeter_line_indicator(canvas, current_line, total_l
     second_line:set_character_at(2 + second_line_horizontal_char_count, borders.bottom_right)
     second_line:set_character_at(
         3 + second_line_horizontal_char_count,
-        Character:new(tostring((current_line - 1) % 10))
+        Character:new(tostring((current_line - 1) % 10), "AltimeterLinePrevNextDigit")
     )
     second_line:set_character_at(4 + second_line_horizontal_char_count, borders.vertical)
     canvas:write_line(
@@ -443,7 +449,10 @@ function M_altimeter:draw_altimeter_line_indicator(canvas, current_line, total_l
         middle_line_left_graphic:set_character_at(1, symbols.arrow_pointing_left)
     end
     middle_line_left_graphic:set_character_at(2, borders.vertical)
-    local line_object_line_count = Line.create_from_str(tostring(current_line))
+    local line_object_line_count = Line.create_from_str(
+        tostring(current_line),
+        "AltimeterCurrentLine"
+    )
 
 
     local spaces_needed_to_right_align_line_count =
@@ -490,7 +499,7 @@ function M_altimeter:draw_altimeter_line_indicator(canvas, current_line, total_l
     fourth_line:set_character_at(2 + fourth_line_horizontal_char_count, borders.top_right)
     fourth_line:set_character_at(
         3 + fourth_line_horizontal_char_count,
-        Character:new(tostring((current_line + 1) % 10))
+        Character:new(tostring((current_line + 1) % 10), "AltimeterLinePrevNextDigit")
     )
     fourth_line:set_character_at(4 + fourth_line_horizontal_char_count, borders.vertical)
     canvas:write_line(

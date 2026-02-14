@@ -1,9 +1,9 @@
 local M_character = {}
 
-function M_character:new(char, char_properties)
+function M_character:new(char, hl_group)
     local instance = {
         char = char,
-        properties = char_properties or {},
+        hl_group = hl_group or "Normal",
     }
     setmetatable(instance, { __index = self })
     return instance
@@ -15,6 +15,10 @@ function M_character:get_str_for_display(debug_mode)
         blank_char = "."
     end
     return self.char or blank_char
+end
+
+function M_character:set_hl_group(hl_group)
+    self.hl_group = hl_group
 end
 
 return M_character

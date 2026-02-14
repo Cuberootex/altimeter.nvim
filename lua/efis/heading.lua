@@ -277,5 +277,38 @@ function M_heading:draw_mode_indicator(canvas)
     return canvas
 end
 
+-- function M_heading:draw_file_name(canvas, file_name, is_file_modified)
+--     -- truncate max to width of canvas - 8
+--     -- replace with ellipsis unicode char
+--     local truncated_file_name = file_name
+--     local max_file_name_length = canvas.properties.width - 8
+--     local has_been_truncated = #file_name > max_file_name_length
+--     local line_object_length = math.min(#file_name, max_file_name_length + 1)
+--     if #file_name > max_file_name_length then
+--         truncated_file_name = file_name:sub(1, max_file_name_length - 1)
+--     end
+--     local line_obj = Line.create_from_str(truncated_file_name)
+--     local final_line_obj = Line:new(line_object_length)
+--     final_line_obj:overlay(1, line_obj)
+--     if has_been_truncated then
+--         local ellipsis_char = Character:new("…")
+--         final_line_obj:set_character_at(line_object_length, ellipsis_char)
+--     end
+--     if is_file_modified then
+--         local modified_char = Character:new("")
+--         canvas:write_char(
+--             modified_char,
+--             3,
+--             1
+--         )
+--     end
+--     canvas:write_line(
+--         Line.create_from_str(truncated_file_name),
+--         3,
+--         2
+--     )
+--     return canvas
+-- end
+
 
 return M_heading

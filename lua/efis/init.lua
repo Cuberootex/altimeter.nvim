@@ -4,11 +4,13 @@ local M = {}
 
 function M.setup(opts)
     cfg:setup(opts)
+    local highlights = require("efis.highlights")
     local altimeter_ui = require("efis.ui")
     local ui_instance = altimeter_ui:new()
     local heading_ui = require("efis.ui_heading")
     local heading_ui_instance = heading_ui:new()
 
+    highlights:setup()
     ui_instance:create_autocmds()
     heading_ui_instance:create_autocmds()
 
