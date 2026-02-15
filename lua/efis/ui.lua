@@ -55,7 +55,7 @@ function M_ui:get_floating_window_options()
     local computed_height = 4 + lines_above_and_below_indicator * 2 + 1 -- +1 for the line the indicator is on
     local height = math.min(computed_height, vim_window_height - 5)
 
-    local row = math.floor(vim_window_height - height - 5)
+    local row = math.floor(vim_window_height - height - 7)
 
     local column = vim_window_width - default_padding_x -- cause anchor at NE by default
 

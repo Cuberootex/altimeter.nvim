@@ -50,7 +50,7 @@ function M_ui_heading:get_floating_window_options()
     local vim_window_width = vim.o.columns
     local vim_window_height = vim.o.lines - vim.o.cmdheight
 
-    local width = 33 -- width needs to be ODD
+    local width = 27 -- width needs to be ODD
     local height = 3
 
     local row = math.floor(vim_window_height - height)
@@ -254,6 +254,7 @@ function M_ui_heading:draw()
     local ns = api.nvim_create_namespace("efis_heading_ns")
     api.nvim_buf_clear_namespace(self.buffer, ns, 0, -1)
     api.nvim_buf_set_lines(self.buffer, 0, -1, false, current_line_graphic)
+    canvas:call_extmark_hl(self.buffer, ns)
 end
 
 return M_ui_heading

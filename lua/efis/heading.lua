@@ -38,7 +38,7 @@ function M_heading:draw_heading_char_indicator(canvas, current_char, total_chars
 
     canvas:write_line(
         current_char_line_object,
-        1,
+        3,
         start_col_for_current_char
     )
     canvas:write_char(
