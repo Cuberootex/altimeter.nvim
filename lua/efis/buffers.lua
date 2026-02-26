@@ -26,6 +26,10 @@ function M_buffers:draw_buffer_counters(canvas, open_buffers_count, buffers_with
     if open_buffers_count > 10 then
         open_buffers_col = open_buffers_col - 1
     end
+    local buffers_with_modif_col = canvas.properties.width
+    if buffers_with_modif_count > 10 then
+        buffers_with_modif_col = buffers_with_modif_col - 1
+    end
     local buffers_with_modif_str = tostring(buffers_with_modif_count)
     local modif_hl = "Normal"
     if buffers_with_modif_count > 0 then
@@ -35,7 +39,7 @@ function M_buffers:draw_buffer_counters(canvas, open_buffers_count, buffers_with
     canvas:write_char(Character:new("B", "BufferDisplayLabels"), 1, canvas.properties.width)
     canvas:write_line(open_buffers_line_object, 2, open_buffers_col)
     canvas:write_char(Character:new("M", "BufferDisplayLabels"), 3, canvas.properties.width)
-    canvas:write_line(buffers_with_modif_line_object, 4, open_buffers_col)
+    canvas:write_line(buffers_with_modif_line_object, 4, buffers_with_modif_col)
     for row = 1, canvas.properties.height do
         canvas:write_char(symbols.vertical_line, row, canvas.properties.width - 2)
     end

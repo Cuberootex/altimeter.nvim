@@ -21,4 +21,9 @@ function M_character:set_hl_group(hl_group)
     self.hl_group = hl_group
 end
 
+function M_character:copy()
+    return M_character:new(self.char, self.hl_group)
+end
+
+
 return M_character

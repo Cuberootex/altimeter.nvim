@@ -106,6 +106,13 @@ local function write_tape_horizontal_line(char_num_represented, canvas_col, tota
     elseif char_num_represented == total_chars then
         symbol = symbols.end_of_tape
     end
+    local total_cols = canvas.properties.width
+    local dist_to_center = math.abs(canvas_col - math.ceil(total_cols / 2))
+    if dist_to_center > 3 then
+        local fade_index = math.min(dist_to_center - 3, 10)
+        local hl_name = "NormalFade" .. fade_index
+        symbol:set_hl_group(hl_name)
+    end
     canvas:write_char(
         symbol,
         2,

@@ -94,6 +94,19 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         canvas:write_char(symbol, canvas_line, tape_start_col)
     end
 
+    local function get_colored_faded_symbol(symbol_to_write, canvas_line)
+        -- TODO: configurable
+        local colored_symbol = symbol_to_write:copy()
+        local dist_to_center = math.abs(canvas_line - math.ceil(canvas_height / 2))
+        local fade_threshold = 1
+        if dist_to_center > fade_threshold then
+            local fade_index = math.min(dist_to_center - fade_threshold, 10)
+            local hl_name = "NormalFade" .. fade_index
+            colored_symbol:set_hl_group(hl_name)
+        end
+        return colored_symbol
+    end
+
     local function write_tape_vertical(line_number_represented, canvas_line)
         local symbol_to_write = symbols.vertical_tape_line
         if line_number_represented == 1 then
@@ -105,7 +118,8 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         elseif line_number_represented % 5 == 0 then
             symbol_to_write = symbols.mark_5_vertical
         end
-        canvas:write_char(symbol_to_write, canvas_line, tape_start_col)
+        local colored_symbol = get_colored_faded_symbol(symbol_to_write, canvas_line)
+        canvas:write_char(colored_symbol, canvas_line, tape_start_col)
     end
 
 
@@ -124,6 +138,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         if not symbol_to_write then
             return
         end
+        local colored_symbol = get_colored_faded_symbol(symbol_to_write, canvas_line)
         -- TODO config for length_marker_line
         -- if they set it to canvas_width - length_line_number_str - 3
         -- then the mark_5_line and mark_10_line characters need to
@@ -135,7 +150,7 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         end
         local line_to_write = Line:new(length_marker_line)
         for i = 1, length_marker_line do
-            line_to_write:set_character_at(i, symbol_to_write)
+            line_to_write:set_character_at(i, colored_symbol)
         end
         canvas:write_line(line_to_write, canvas_line, tape_start_col + 1)
     end
@@ -143,8 +158,14 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
     local function write_line_number(line_number_represented, canvas_line)
         local line_number_str = tostring(line_number_represented)
         local line_number_char_object = Line.create_from_str(line_number_str)
+        local colored_line_number_char_object = Line:new(line_number_char_object.length)
+        for i = 1, line_number_char_object.length do
+            local char = line_number_char_object:get_character_at(i)
+            local colored_char = get_colored_faded_symbol(char, canvas_line)
+            colored_line_number_char_object:set_character_at(i, colored_char)
+        end
         canvas:write_line(
-            line_number_char_object,
+            colored_line_number_char_object,
             canvas_line,
             canvas_width - line_number_char_object.length
         )
@@ -335,20 +356,20 @@ function M_altimeter:draw_altimeter_analog_tape(canvas, current_line, total_line
         if line_number_represented % 5 == 0 or line_number_represented == 1 or line_number_represented == total_lines then
             write_line_number(line_number_represented, canvas_line)
         end
-        write_specific_line_number(line_number_represented, canvas_line, last_insert_mode_line, Character:new("^"))
+        -- write_specific_line_number(line_number_represented, canvas_line, last_insert_mode_line, Character:new("^"))
         write_visual_sel_line_number(line_number_represented, canvas_line)
         write_tape_visual(line_number_represented, canvas_line)
         ::continue::
     end
 
-    sticky_write_specific_line_number(
-        line_num_represented_top_row_tape,
-        line_num_represented_bottom_row_tape,
-        tape_top_line_on_canvas,
-        tape_bottom_line_on_canvas,
-        last_insert_mode_line,
-        Character:new("^")
-    )
+    -- sticky_write_specific_line_number(
+    --     line_num_represented_top_row_tape,
+    --     line_num_represented_bottom_row_tape,
+    --     tape_top_line_on_canvas,
+    --     tape_bottom_line_on_canvas,
+    --     last_insert_mode_line,
+    --     Character:new("^")
+    -- )
 
     -- has priority over the last insert line indicator
     sticky_write_visual_sel_line_number(

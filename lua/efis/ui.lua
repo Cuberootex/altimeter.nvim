@@ -23,7 +23,7 @@ function M_ui:new()
             height = -1,
             anchor = "NE",
             border = { "·", "─", "·", "", "·", "─", "·", "" },
-            zindex = 1,
+            zindex = 500,
             winblend = 100,
         }
     }
