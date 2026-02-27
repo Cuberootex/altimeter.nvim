@@ -253,7 +253,9 @@ function M_ui:draw()
     -- end
     local canvas = Canvas:new(self.window_options.width, self.window_options.height)
     -- so inconsistent, tape_start_col is passed here
-    canvas = altimeter:draw_top_and_bottom_borders(canvas, 2)
+    --
+    -- TODO configurable
+    -- canvas = altimeter:draw_top_and_bottom_borders(canvas, 2)
     -- but for this function it's baked in...
     canvas = altimeter:draw_altimeter_analog_tape(canvas, line, total_lines)
     canvas = altimeter:draw_altimeter_line_indicator(canvas, line, total_lines)

@@ -202,8 +202,9 @@ function M_heading:draw_analog_tape(canvas, current_char, total_chars)
         tape_right_limit = Character:new("┋")
     }
 
-    canvas:write_char(symbols.tape_left_limit, 2, tape_start_col_on_canvas - 1)
-    canvas:write_char(symbols.tape_right_limit, 2, tape_end_col_on_canvas + 1)
+    -- TODO toggleable via config
+    -- canvas:write_char(symbols.tape_left_limit, 2, tape_start_col_on_canvas - 1)
+    -- canvas:write_char(symbols.tape_right_limit, 2, tape_end_col_on_canvas + 1)
 
     for col = tape_start_col_on_canvas, tape_end_col_on_canvas do
         local represented_char_number = 
