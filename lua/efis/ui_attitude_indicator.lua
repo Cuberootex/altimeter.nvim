@@ -26,14 +26,6 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
         local ft = vim.bo.filetype
         local bt = vim.bo.buftype
 
-        if
-            ft == "alpha"
-            or ft == "dashboard"
-            or bt == "nofile"
-            or bt == "terminal"
-        then
-            return ""
-        end
 
         local lnum = vim.v.lnum
         local relnum = vim.v.relnum
@@ -41,13 +33,29 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
         local cursor_lnum = cursor[1]
         local total_lines = vim.api.nvim_buf_line_count(0)
 
+
+        if ft == "dashboard" or bt == "terminal" then
+            return ""
+        end
+
+
         local relnum_len_delta = #tostring(total_lines) - #tostring(relnum)
         local left_padding_str = string.rep(" ", relnum_len_delta)
+
+        -- Default behavior
+        -- so that lines show up in "outline.nvim" for example
+        if ft == "alpha" or bt == "nofile" then
+            if relnum == 0 then
+                return left_padding_str .. tostring(lnum) .. " "
+            end
+            return left_padding_str .. tostring(relnum) .. " "
+        end
 
         local cur_relnum_str = tostring(vim.v.relnum)
         if vim.fn.mode() == "i" and relnum % 5 ~= 0 then
             cur_relnum_str = string.rep(" ", #cur_relnum_str)
         end
+
 
 
         local vertical_motion = lnum < cursor_lnum and "k" or "j"
