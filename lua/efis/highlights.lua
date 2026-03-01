@@ -23,23 +23,26 @@ local function generate_fade_highlights()
     local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
     local fade_highlights = {}
     local normal_hl_rgb = extract_rgb_from_color(normal_hl.fg or 0)
-    local decrease_brightness = normal_hl_rgb.r > 127 or normal_hl_rgb.g > 127 or normal_hl_rgb.b > 127
+    local decrease_brightness = normal_hl_rgb.r > 17 or normal_hl_rgb.g > 127 or normal_hl_rgb.b > 127
     for i = 1, 10 do
         local factor = i / 10
         local hl_name = "NormalFade" .. i
         local hl_def = {}
         if normal_hl.fg then
-            local r = math.floor(normal_hl_rgb.r * (decrease_brightness and (1 - factor) or (1 + factor)))
-            local g = math.floor(normal_hl_rgb.g * (decrease_brightness and (1 - factor) or (1 + factor)))
-            local b = math.floor(normal_hl_rgb.b * (decrease_brightness and (1 - factor) or (1 + factor)))
+            local r, g, b
+            if decrease_brightness then
+                r = math.floor(normal_hl_rgb.r * (1 - factor))
+                g = math.floor(normal_hl_rgb.g * (1 - factor))
+                b = math.floor(normal_hl_rgb.b * (1 - factor))
+            else
+                local inv_r = 255 - normal_hl_rgb.r
+                local inv_g = 255 - normal_hl_rgb.g
+                local inv_b = 255 - normal_hl_rgb.b
+                r = math.floor(normal_hl_rgb.r + factor * (inv_r - normal_hl_rgb.r))
+                g = math.floor(normal_hl_rgb.g + factor * (inv_g - normal_hl_rgb.g))
+                b = math.floor(normal_hl_rgb.b + factor * (inv_b - normal_hl_rgb.b))
+            end
             hl_def.fg = string.format("#%02x%02x%02x", r, g, b)
-        end
-        if normal_hl.bg then
-            local normal_hl_bg_rgb = extract_rgb_from_color(normal_hl.bg)
-            local r = math.floor(normal_hl_bg_rgb.r * (decrease_brightness and (1 - factor) or (1 + factor)))
-            local g = math.floor(normal_hl_bg_rgb.g * (decrease_brightness and (1 - factor) or (1 + factor)))
-            local b = math.floor(normal_hl_bg_rgb.b * (decrease_brightness and (1 - factor) or (1 + factor)))
-            hl_def.bg = string.format("#%02x%02x%02x", r, g, b)
         end
         fade_highlights[hl_name] = hl_def
     end

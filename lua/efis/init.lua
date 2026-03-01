@@ -17,6 +17,15 @@ function M.setup(opts)
     heading_ui_instance:create_autocmds()
     heading_buffers_instance:create_autocmds()
 
+    local augrp = vim.api.nvim_create_augroup("altimeter_hl_augrp", { clear = true })
+    -- todo, refactor, move this somewhere else
+    vim.api.nvim_create_autocmd("ColorScheme", {
+        callback = function ()
+            highlights:setup()
+        end,
+        group = augrp
+    })
+
     vim.api.nvim_create_user_command("AltimeterToggle", function()
         ui_instance:toggle()
         if ui_instance.active then

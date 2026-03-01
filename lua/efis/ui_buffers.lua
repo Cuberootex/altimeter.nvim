@@ -83,6 +83,13 @@ function M_ui_buffers:create_autocmds()
     }
     vim.api.nvim_create_autocmd(refresh_events, {
         callback = function()
+            local mode = vim.api.nvim_get_mode().mode
+            if mode == "i" then
+                self:close_window()
+            else
+                self:open_window()
+                self:draw()
+            end
             -- TODO config: autohide can be based on absolute cursor position OR
             -- on "character column" position
             -- which will hide the window if the user positions himself
@@ -104,7 +111,6 @@ function M_ui_buffers:create_autocmds()
             --     self.autohide.window_visibility_updated = false
             --     self:open_window()
             -- end
-            self:draw()
         end,
         group = self.augrp,
     })
@@ -303,6 +309,7 @@ function M_ui_buffers:draw()
             "BufferDisplayOtherBuffers"
         )
     end
+    local cur_buf_name = buffer_infos["current"].name
     canvas = buffers:draw_buffer_name(
         canvas,
         2,
@@ -311,14 +318,17 @@ function M_ui_buffers:draw()
         buffer_infos["current"].is_modified,
         "BufferDisplayCurrentBuffer"
     )
-    canvas = buffers:draw_buffer_name(
-        canvas,
-        4,
-        buffer_infos["alternate"].name,
-        "#",
-        buffer_infos["alternate"].is_modified,
-        "BufferDisplayOtherBuffers"
-    )
+    local alt_buf_name = buffer_infos["alternate"].name
+    if alt_buf_name ~= "[None]" and alt_buf_name ~= cur_buf_name then
+        canvas = buffers:draw_buffer_name(
+            canvas,
+            4,
+            buffer_infos["alternate"].name,
+            "#",
+            buffer_infos["alternate"].is_modified,
+            "BufferDisplayOtherBuffers"
+        )
+    end
 
     -- canvas = heading:draw_file_name(canvas, vim.fn.expand("%:t"), is_file_modified)
 

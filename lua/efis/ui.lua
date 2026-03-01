@@ -41,7 +41,7 @@ function M_ui:get_floating_window_options()
     -- TODO: read these default values from config later
     local lines = vim.api.nvim_buf_line_count(0)
     local default_width = self:calculate_floating_window_width(lines)
-    local lines_above_and_below_indicator = 8
+    local lines_above_and_below_indicator = 9
     -- we add 2 extra lines above and belowe on top of 
     -- the 'lines_above_and_below_indicator' count
     -- to draw a border and to display extra text$
