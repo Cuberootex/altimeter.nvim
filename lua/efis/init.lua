@@ -11,11 +11,17 @@ function M.setup(opts)
     local heading_ui_instance = heading_ui:new()
     local heading_buffers = require("efis.ui_buffers")
     local heading_buffers_instance = heading_buffers:new()
+    local attitude_ui = require("efis.ui_attitude_indicator")
+    local attitude_ui_instance = attitude_ui:new()
 
     highlights:setup()
+
     ui_instance:create_autocmds()
     heading_ui_instance:create_autocmds()
     heading_buffers_instance:create_autocmds()
+    attitude_ui_instance:create_autocmds()
+
+    attitude_ui_instance:create_statuscolumn_fmt()
 
     local augrp = vim.api.nvim_create_augroup("altimeter_hl_augrp", { clear = true })
     -- todo, refactor, move this somewhere else

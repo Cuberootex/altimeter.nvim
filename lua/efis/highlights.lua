@@ -23,7 +23,7 @@ local function generate_fade_highlights()
     local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
     local fade_highlights = {}
     local normal_hl_rgb = extract_rgb_from_color(normal_hl.fg or 0)
-    local decrease_brightness = normal_hl_rgb.r > 17 or normal_hl_rgb.g > 127 or normal_hl_rgb.b > 127
+    local decrease_brightness = normal_hl_rgb.r > 127 or normal_hl_rgb.g > 127 or normal_hl_rgb.b > 127
     for i = 1, 10 do
         local factor = i / 10
         local hl_name = "NormalFade" .. i
