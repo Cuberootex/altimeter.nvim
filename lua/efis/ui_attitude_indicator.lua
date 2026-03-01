@@ -52,7 +52,7 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
 
         local vertical_motion = lnum < cursor_lnum and "k" or "j"
         local v_motion_str = " "
-        if relnum ~= 0 and relnum % 5 == 0 then
+        if relnum ~= 0 and relnum % 5 == 0 and vim.fn.mode() ~= "i" then
             v_motion_str = vertical_motion
         end
 
@@ -73,15 +73,37 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
         end
 
         local line_hl = "Normal"
+        local analog_tape_hl = "Normal"
         if relnum > 0 then
-            local fade_index = math.min(6, relnum)
-            line_hl = "NormalFade" .. tostring(fade_index)
+            -- todo: config
+            local fade_limit = 4
+            if vim.fn.mode() == "i" then
+                -- todo: config
+                fade_limit = 8
+            end
+            local fade_index = math.min(fade_limit, relnum)
+            local hl_prefix = "NormalFade"
+            line_hl = hl_prefix .. tostring(fade_index)
+            analog_tape_hl = line_hl
         end
+
+        if relnum > 0 and vim.fn.mode() ~= "i" then
+            -- todo: config
+            local fade_index = math.min(6, relnum)
+            if lnum < cursor_lnum then
+                analog_tape_hl = "LineNrPositiveFade" .. fade_index
+            else
+                analog_tape_hl = "LineNrNegativeFade" .. fade_index
+            end
+        end
+
+
 
         return
             "%#" .. line_hl .. "#"
             .. left_padding_str
             .. cur_relnum_str
+            .. "%#" .. analog_tape_hl .. "#"
             .. v_motion_str
             .. cur_line_indicator_str
             .. mark
