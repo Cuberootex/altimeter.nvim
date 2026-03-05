@@ -4,17 +4,6 @@ local Canvas = require("efis.canvas.canvas")
 local Character = require("efis.canvas.character")
 local Line = require("efis.canvas.line")
 
-
-
--- local function zero_pad_number(number_str, desired_length)
---     if #number_str >= desired_length then
---         return number_str
---     else
---         return zero_pad_number("0" .. number_str, desired_length)
---     end
--- end
-
-
 function M_buffers:draw_buffer_counters(canvas, open_buffers_count, buffers_with_modif_count)
     -- draw at the right hand side of the screen.
     local symbols = {

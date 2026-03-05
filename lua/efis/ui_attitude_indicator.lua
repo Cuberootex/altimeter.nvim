@@ -29,9 +29,11 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
 
         local lnum = vim.v.lnum
         local relnum = vim.v.relnum
+        local virtnum = vim.v.virtnum
         local cursor = vim.api.nvim_win_get_cursor(0)
         local cursor_lnum = cursor[1]
         local total_lines = vim.api.nvim_buf_line_count(0)
+
 
 
         if ft == "dashboard" or bt == "terminal" then
@@ -52,7 +54,7 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
         end
 
         local cur_relnum_str = tostring(vim.v.relnum)
-        if vim.fn.mode() == "i" and relnum % 5 ~= 0 then
+        if vim.fn.mode() == "i" and relnum % 5 ~= 0 or virtnum ~= 0 then
             cur_relnum_str = string.rep(" ", #cur_relnum_str)
         end
 
@@ -60,24 +62,31 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
 
         local vertical_motion = lnum < cursor_lnum and "k" or "j"
         local v_motion_str = " "
-        if relnum ~= 0 and relnum % 5 == 0 and vim.fn.mode() ~= "i" then
+        if
+            relnum ~= 0
+            and relnum % 5 == 0
+            and vim.fn.mode() ~= "i"
+            and virtnum == 0
+        then
             v_motion_str = vertical_motion
         end
 
         local cur_line_indicator_str = " "
-        if relnum == 0 then
+        if relnum == 0 and virtnum == 0 then
             cur_line_indicator_str = symbols.current_line_indicator.char
         end
 
         local rightmost_border = symbols.vertical_tape_line.char
         local mark = " "
 
-        if relnum % 10 == 0 then
-            mark = symbols.mark_10_line.char
-            rightmost_border = symbols.mark_10_vertical.char
-        elseif relnum % 5 == 0 then
-            mark = symbols.mark_5_line.char
-            rightmost_border = symbols.mark_5_vertical.char
+        if virtnum == 0 then
+            if relnum % 10 == 0 then
+                mark = symbols.mark_10_line.char
+                rightmost_border = symbols.mark_10_vertical.char
+            elseif relnum % 5 == 0 then
+                mark = symbols.mark_5_line.char
+                rightmost_border = symbols.mark_5_vertical.char
+            end
         end
 
         local line_hl = "Normal"
@@ -87,7 +96,7 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
             local fade_limit = 4
             if vim.fn.mode() == "i" then
                 -- todo: config
-                fade_limit = 8
+                fade_limit = 7
             end
             local fade_index = math.min(fade_limit, relnum)
             local hl_prefix = "NormalFade"
@@ -104,6 +113,7 @@ function M_ui_attitude_indicator:create_statuscolumn_fmt()
                 analog_tape_hl = "LineNrNegativeFade" .. fade_index
             end
         end
+
 
 
 
